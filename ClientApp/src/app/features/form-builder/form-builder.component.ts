@@ -15,6 +15,7 @@ import { ControlConfigComponent } from './control-config/control-config.componen
 @Component({
   selector: 'app-form-builder',
   templateUrl: './form-builder.component.html',
+  styleUrls: ['./form-builder.component.scss'],
   standalone: false
 })
 export class FormBuilderComponent implements OnInit {
@@ -49,7 +50,8 @@ export class FormBuilderComponent implements OnInit {
   ) { 
     this.formGroup = this.fb.group({
       title: ['', Validators.required],
-      description: ['']
+      description: [''],
+      isPublished: [false]
     });
     
     this.sectionForm = this.fb.group({
@@ -59,25 +61,26 @@ export class FormBuilderComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.route.paramMap.subscribe(params => {
-      const idParam = params.get('id');
-      if (idParam) {
-        this.formId = +idParam;
+    this.route.params.subscribe(params => {
+      if (params['id']) {
+        this.formId = +params['id'];
         this.loadForm(this.formId);
       } else {
         this.initNewForm();
       }
     });
   }
-
+  
   loadForm(id: number): void {
     this.loading = true;
+    
     this.formService.getForm(id).subscribe({
       next: (form) => {
         this.form = form;
         this.formGroup.patchValue({
           title: form.title,
-          description: form.description
+          description: form.description,
+          isPublished: form.isPublished
         });
         this.loading = false;
       },
@@ -87,16 +90,16 @@ export class FormBuilderComponent implements OnInit {
       }
     });
   }
-
+  
   initNewForm(): void {
     this.form = {
       id: 0,
-      title: '',
+      title: 'New Form',
       description: '',
-      createdBy: 'current-user', // In a real app, get from auth service
+      isPublished: false,
+      createdBy: 'current-user', // Replace with actual user ID
       createdDate: new Date(),
       modifiedDate: new Date(),
-      isPublished: false,
       sections: [
         {
           id: 0,
@@ -109,26 +112,23 @@ export class FormBuilderComponent implements OnInit {
       ]
     };
   }
-
+  
   saveForm(): void {
-    if (this.formGroup.invalid) {
-      this.snackBar.open('Please fill in all required fields', 'Close', { duration: 3000 });
-      return;
-    }
-
-    const formData = {
-      ...this.form,
-      title: this.formGroup.value.title,
-      description: this.formGroup.value.description,
-      modifiedDate: new Date()
-    };
-
+    if (!this.form) return;
+    
     this.loading = true;
     
+    // Update form with values from form group
+    this.form.title = this.formGroup.value.title;
+    this.form.description = this.formGroup.value.description;
+    this.form.isPublished = this.formGroup.value.isPublished;
+    
     if (this.formId) {
-      this.formService.updateForm(formData as Form).subscribe({
-        next: (response) => {
-          this.form = response;
+      // Update existing form
+      this.form.id = this.formId; // Ensure ID is set correctly
+      this.formService.updateForm(this.form).subscribe({
+        next: (updatedForm) => {
+          this.form = updatedForm;
           this.snackBar.open('Form updated successfully', 'Close', { duration: 3000 });
           this.loading = false;
         },
@@ -138,10 +138,11 @@ export class FormBuilderComponent implements OnInit {
         }
       });
     } else {
-      this.formService.createForm(formData as Form).subscribe({
-        next: (response) => {
-          this.form = response;
-          this.formId = response.id;
+      // Create new form
+      this.formService.createForm(this.form).subscribe({
+        next: (newForm) => {
+          this.form = newForm;
+          this.formId = newForm.id;
           this.router.navigate(['/forms', this.formId]);
           this.snackBar.open('Form created successfully', 'Close', { duration: 3000 });
           this.loading = false;
@@ -228,35 +229,46 @@ export class FormBuilderComponent implements OnInit {
           event.container.data.map(control => control.id)
         ).subscribe();
       }
+      
+      this.snackBar.open('Control reordered', 'Close', { duration: 2000 });
     } else if (event.previousContainer.id === 'available-controls') {
       // Dragging from available controls to a section
-      const controlType = this.availableControls[event.previousIndex].type;
+      const draggedItem = event.item.data || this.availableControls[event.previousIndex];
+      const controlType = draggedItem.type;
+      
+      // Show success message 
+      this.snackBar.open(`Adding ${controlType} control`, 'Close', { duration: 1500 });
       
       // Open configuration dialog
       this.openControlConfig(null, controlType, sectionIndex, event.currentIndex);
     } else {
       // Moving control between different sections
-      const previousSectionIndex = parseInt(event.previousContainer.id.split('-')[1]);
-      const control = event.previousContainer.data[event.previousIndex] as Control;
-      
-      // Remove from previous section
-      this.form.sections[previousSectionIndex].controls.splice(event.previousIndex, 1);
-      
-      // Add to new section
-      control.sectionId = this.form.sections[sectionIndex].id;
-      this.form.sections[sectionIndex].controls.splice(event.currentIndex, 0, control);
-      
-      // Update orderIndex in both sections
-      this.form.sections[previousSectionIndex].controls.forEach((c, idx) => {
-        c.orderIndex = idx;
-      });
-      
-      this.form.sections[sectionIndex].controls.forEach((c, idx) => {
-        c.orderIndex = idx;
-      });
-      
-      // API update would go here in production
-      this.snackBar.open('Control moved to new section', 'Close', { duration: 2000 });
+      try {
+        const previousSectionIndex = parseInt(event.previousContainer.id.split('-')[1]);
+        const control = event.previousContainer.data[event.previousIndex] as Control;
+        
+        // Remove from previous section
+        this.form.sections[previousSectionIndex].controls.splice(event.previousIndex, 1);
+        
+        // Add to new section
+        control.sectionId = this.form.sections[sectionIndex].id;
+        this.form.sections[sectionIndex].controls.splice(event.currentIndex, 0, control);
+        
+        // Update orderIndex in both sections
+        this.form.sections[previousSectionIndex].controls.forEach((c, idx) => {
+          c.orderIndex = idx;
+        });
+        
+        this.form.sections[sectionIndex].controls.forEach((c, idx) => {
+          c.orderIndex = idx;
+        });
+        
+        // API update would go here in production
+        this.snackBar.open('Control moved to new section', 'Close', { duration: 2000 });
+      } catch (err) {
+        console.error('Error moving control between sections:', err);
+        this.snackBar.open('Error moving control', 'Close', { duration: 2000 });
+      }
     }
   }
 
