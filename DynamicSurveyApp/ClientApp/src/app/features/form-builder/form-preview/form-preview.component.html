@@ -1,0 +1,175 @@
+<div class="container mt-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>{{ previewMode ? 'Form Preview' : 'Form Submission' }}</h1>
+    <div>
+      <button mat-raised-button color="basic" (click)="backToBuilder()">
+        <mat-icon>arrow_back</mat-icon> Back to Builder
+      </button>
+      <button mat-raised-button color="accent" class="ml-2" (click)="togglePreviewMode()">
+        <mat-icon>{{ previewMode ? 'edit' : 'visibility' }}</mat-icon>
+        {{ previewMode ? 'Switch to Submission Mode' : 'Switch to Preview Mode' }}
+      </button>
+    </div>
+  </div>
+
+  <div *ngIf="loading" class="d-flex justify-content-center">
+    <mat-spinner diameter="40"></mat-spinner>
+  </div>
+
+  <div *ngIf="!loading && form">
+    <div class="form-header mb-4">
+      <h2>{{ form.title }}</h2>
+      <p *ngIf="form.description">{{ form.description }}</p>
+    </div>
+
+    <form [formGroup]="formGroup" (ngSubmit)="onSubmit()">
+      <div *ngFor="let section of form.sections" class="mb-4">
+        <mat-card>
+          <mat-card-header>
+            <mat-card-title>{{ section.title }}</mat-card-title>
+            <mat-card-subtitle *ngIf="section.description">{{ section.description }}</mat-card-subtitle>
+          </mat-card-header>
+          <mat-card-content>
+            <div *ngFor="let control of section.controls" class="mb-3" 
+                 [hidden]="!controlVisibility[control.id]">
+              
+              <!-- Note Control -->
+              <div *ngIf="control.type === 'Note'" class="note-control">
+                <div class="alert alert-info">
+                  {{ control.configuration.noteText }}
+                </div>
+              </div>
+              
+              <!-- Text Control -->
+              <mat-form-field *ngIf="control.type === 'Text'" class="w-100">
+                <mat-label>{{ control.label }}</mat-label>
+                <input matInput [formControlName]="'control_' + control.id" 
+                      [type]="control.configuration.inputType === 'Number' ? 'number' : 
+                              control.configuration.inputType === 'Email' ? 'email' : 'text'"
+                      [disabled]="!controlEnabled[control.id]">
+                <mat-error *ngIf="formGroup.get('control_' + control.id)?.hasError('required')">
+                  This field is required
+                </mat-error>
+                <mat-error *ngIf="formGroup.get('control_' + control.id)?.hasError('min')">
+                  Value is below minimum allowed ({{ control.configuration.minValue }})
+                </mat-error>
+                <mat-error *ngIf="formGroup.get('control_' + control.id)?.hasError('max')">
+                  Value is above maximum allowed ({{ control.configuration.maxValue }})
+                </mat-error>
+              </mat-form-field>
+              
+              <!-- Textarea Control -->
+              <mat-form-field *ngIf="control.type === 'Textarea'" class="w-100">
+                <mat-label>{{ control.label }}</mat-label>
+                <textarea matInput [formControlName]="'control_' + control.id" rows="4"
+                         [disabled]="!controlEnabled[control.id]"></textarea>
+                <mat-error *ngIf="formGroup.get('control_' + control.id)?.hasError('required')">
+                  This field is required
+                </mat-error>
+                <mat-error *ngIf="formGroup.get('control_' + control.id)?.hasError('maxlength')">
+                  Maximum length exceeded ({{ control.configuration.maxLength }} characters)
+                </mat-error>
+              </mat-form-field>
+              
+              <!-- Radio Group Control -->
+              <div *ngIf="control.type === 'RadioGroup'">
+                <div class="form-label">{{ control.label }} <span *ngIf="control.isRequired" class="required-marker">*</span></div>
+                <mat-radio-group [formControlName]="'control_' + control.id" 
+                                [disabled]="!controlEnabled[control.id]">
+                  <mat-radio-button *ngFor="let option of control.options" 
+                                   [value]="option.value" class="d-block mb-2">
+                    {{ option.text }}
+                  </mat-radio-button>
+                </mat-radio-group>
+                <mat-error *ngIf="formGroup.get('control_' + control.id)?.hasError('required') && 
+                                formGroup.get('control_' + control.id)?.touched">
+                  This field is required
+                </mat-error>
+              </div>
+              
+              <!-- Checkbox Group Control -->
+              <div *ngIf="control.type === 'CheckboxGroup'">
+                <div class="form-label">{{ control.label }} <span *ngIf="control.isRequired" class="required-marker">*</span></div>
+                <div *ngFor="let option of control.options" class="mb-2">
+                  <mat-checkbox [value]="option.value" 
+                               [disabled]="!controlEnabled[control.id]">
+                    {{ option.text }}
+                  </mat-checkbox>
+                </div>
+                <mat-error *ngIf="formGroup.get('control_' + control.id)?.hasError('required') && 
+                                formGroup.get('control_' + control.id)?.touched">
+                  This field is required
+                </mat-error>
+              </div>
+              
+              <!-- Dropdown Control -->
+              <mat-form-field *ngIf="control.type === 'Dropdown'" class="w-100">
+                <mat-label>{{ control.label }}</mat-label>
+                <mat-select [formControlName]="'control_' + control.id" 
+                           [multiple]="control.configuration.selectionType === 'Multiple'"
+                           [disabled]="!controlEnabled[control.id]">
+                  <mat-option *ngFor="let option of control.options" [value]="option.value">
+                    {{ option.text }}
+                  </mat-option>
+                </mat-select>
+                <mat-error *ngIf="formGroup.get('control_' + control.id)?.hasError('required')">
+                  This field is required
+                </mat-error>
+              </mat-form-field>
+              
+              <!-- File Upload Control -->
+              <div *ngIf="control.type === 'FileUpload'">
+                <div class="form-label">{{ control.label }} <span *ngIf="control.isRequired" class="required-marker">*</span></div>
+                <button mat-raised-button color="basic" type="button"
+                       [disabled]="!controlEnabled[control.id]">
+                  <mat-icon>cloud_upload</mat-icon> Upload File
+                </button>
+                <p class="text-muted small mt-1">
+                  Accepted file types: {{ control.configuration.acceptedFileTypes?.join(', ') || 'All files' }}
+                </p>
+              </div>
+              
+              <!-- Signature Control -->
+              <div *ngIf="control.type === 'Signature'">
+                <div class="form-label">{{ control.label }} <span *ngIf="control.isRequired" class="required-marker">*</span></div>
+                <div class="signature-pad mt-2 p-2 border rounded" 
+                     [class.disabled]="!controlEnabled[control.id]">
+                  <p class="text-center text-muted">
+                    <mat-icon>draw</mat-icon> 
+                    Sign here
+                  </p>
+                </div>
+                <div class="text-right mt-2">
+                  <button mat-button type="button" color="warn" [disabled]="!controlEnabled[control.id]">
+                    Clear Signature
+                  </button>
+                </div>
+              </div>
+              
+              <!-- Location Picker Control -->
+              <div *ngIf="control.type === 'LocationPicker'">
+                <div class="form-label">{{ control.label }} <span *ngIf="control.isRequired" class="required-marker">*</span></div>
+                <button mat-raised-button color="basic" type="button"
+                       [disabled]="!controlEnabled[control.id]">
+                  <mat-icon>location_on</mat-icon> Capture Location
+                </button>
+                <div *ngIf="control.configuration.showMap && controlEnabled[control.id]" class="mt-2">
+                  <div class="location-map-placeholder">
+                    <p class="text-center text-muted">Map would appear here</p>
+                  </div>
+                </div>
+              </div>
+              
+            </div>
+          </mat-card-content>
+        </mat-card>
+      </div>
+
+      <div class="form-actions mt-4 mb-5 text-right">
+        <button mat-raised-button color="primary" type="submit" [disabled]="previewMode && formGroup.invalid">
+          {{ previewMode ? 'Validate Form' : 'Submit Form' }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
