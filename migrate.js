@@ -1,40 +1,38 @@
-const { spawn } = require('child_process');
-const fs = require('fs');
-const path = require('path');
+const { migrate } = require('drizzle-orm/postgres-js/migrator');
+const { drizzle } = require('drizzle-orm/postgres-js');
+const postgres = require('postgres');
+const { resolve } = require('path');
 
-// Create a minimal drizzle.config.json file
-const config = {
-  schema: './shared/schema.ts',
-  out: './drizzle',
-  driver: 'pg',
-  dbCredentials: {
-    connectionString: process.env.DATABASE_URL,
-  },
-};
+// Database connection string from environment variable
+const connectionString = process.env.DATABASE_URL;
 
-// Write the config file
-fs.writeFileSync(
-  path.join(__dirname, 'drizzle.config.json'), 
-  JSON.stringify(config, null, 2)
-);
+if (!connectionString) {
+  console.error('DATABASE_URL environment variable is not set');
+  process.exit(1);
+}
 
-console.log('Created drizzle.config.json');
-
-// Run the migration
-const migration = spawn('npx', ['drizzle-kit', 'push:pg']);
-
-migration.stdout.on('data', (data) => {
-  console.log(`stdout: ${data}`);
-});
-
-migration.stderr.on('data', (data) => {
-  console.error(`stderr: ${data}`);
-});
-
-migration.on('close', (code) => {
-  console.log(`Migration process exited with code ${code}`);
+async function main() {
+  console.log('Starting database migration...');
   
-  // Clean up the config file
-  fs.unlinkSync(path.join(__dirname, 'drizzle.config.json'));
-  console.log('Removed drizzle.config.json');
-});
+  // Set up Postgres connection
+  const sql = postgres(connectionString, { max: 1 });
+  
+  // Create Drizzle instance
+  const db = drizzle(sql);
+  
+  // Run migrations
+  try {
+    console.log('Running migrations from:', resolve('./drizzle'));
+    await migrate(db, { migrationsFolder: resolve('./drizzle') });
+    console.log('Migrations completed successfully');
+  } catch (error) {
+    console.error('Migration failed:', error);
+    process.exit(1);
+  }
+  
+  // Close the connection
+  await sql.end();
+  console.log('Database connection closed');
+}
+
+main();

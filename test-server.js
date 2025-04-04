@@ -1,107 +1,135 @@
-// A simple test server to verify database connectivity
 const express = require('express');
+const { storage } = require('./server/storage');
+const bodyParser = require('body-parser');
+const cors = require('cors');
 
-// We can't directly require TypeScript files, so we'll need a workaround 
-// to access the database through direct SQL queries
-const { Pool } = require('pg');
+// Create Express app
+const app = express();
+const port = process.env.PORT || 8000;
 
-const pool = new Pool({ 
-  connectionString: process.env.DATABASE_URL 
+// Middleware
+app.use(cors());
+app.use(bodyParser.json());
+
+// Health check endpoint
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok', timestamp: new Date() });
 });
 
-const app = express();
-const port = 8000;
+// API endpoints for users
+app.get('/api/users/:id', async (req, res) => {
+  try {
+    const user = await storage.getUser(parseInt(req.params.id));
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    // Remove sensitive information
+    const { password, ...userWithoutPassword } = user;
+    res.json(userWithoutPassword);
+  } catch (error) {
+    console.error('Error fetching user:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
 
-app.use(express.json());
+app.post('/api/users', async (req, res) => {
+  try {
+    const newUser = await storage.createUser(req.body);
+    
+    // Remove sensitive information
+    const { password, ...userWithoutPassword } = newUser;
+    res.status(201).json(userWithoutPassword);
+  } catch (error) {
+    console.error('Error creating user:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
 
-// GET all forms
+// API endpoints for forms
 app.get('/api/forms', async (req, res) => {
   try {
-    const result = await pool.query('SELECT * FROM forms');
-    res.json(result.rows);
+    const userId = req.query.userId ? parseInt(req.query.userId) : undefined;
+    const forms = await storage.getForms(userId);
+    res.json(forms);
   } catch (error) {
     console.error('Error fetching forms:', error);
-    res.status(500).json({ error: 'Failed to fetch forms' });
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 
-// GET a specific form with its sections and controls
 app.get('/api/forms/:id', async (req, res) => {
   try {
-    const formId = parseInt(req.params.id);
-    
-    // Get form details
-    const formResult = await pool.query('SELECT * FROM forms WHERE id = $1', [formId]);
-    
-    if (formResult.rows.length === 0) {
+    const form = await storage.getForm(parseInt(req.params.id));
+    if (!form) {
       return res.status(404).json({ error: 'Form not found' });
     }
-    
-    const form = formResult.rows[0];
-    
-    // Get sections for this form
-    const sectionsResult = await pool.query('SELECT * FROM sections WHERE form_id = $1 ORDER BY display_order', [formId]);
-    const sections = sectionsResult.rows;
-    
-    // Get controls for each section and add them to their respective sections
-    const sectionsWithControls = await Promise.all(
-      sections.map(async (section) => {
-        const controlsResult = await pool.query('SELECT * FROM controls WHERE section_id = $1 ORDER BY display_order', [section.id]);
-        return {
-          ...section,
-          controls: controlsResult.rows,
-        };
-      })
-    );
-    
-    // Get conditional logic for this form
-    const conditionalLogicResult = await pool.query('SELECT * FROM conditional_logic WHERE form_id = $1', [formId]);
-    
-    res.json({
-      ...form,
-      sections: sectionsWithControls,
-      conditionalLogic: conditionalLogicResult.rows,
-    });
-    
+    res.json(form);
   } catch (error) {
-    console.error('Error fetching form details:', error);
-    res.status(500).json({ error: 'Failed to fetch form details' });
+    console.error('Error fetching form:', error);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 
-// GET conditional logic for a form
-app.get('/api/forms/:id/conditional-logic', async (req, res) => {
+app.post('/api/forms', async (req, res) => {
   try {
-    const formId = parseInt(req.params.id);
-    
-    // Check if form exists
-    const formResult = await pool.query('SELECT id FROM forms WHERE id = $1', [formId]);
-    if (formResult.rows.length === 0) {
+    const newForm = await storage.createForm(req.body);
+    res.status(201).json(newForm);
+  } catch (error) {
+    console.error('Error creating form:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.put('/api/forms/:id', async (req, res) => {
+  try {
+    const updatedForm = await storage.updateForm(parseInt(req.params.id), req.body);
+    if (!updatedForm) {
       return res.status(404).json({ error: 'Form not found' });
     }
-    
-    // Get all conditional logic rules for this form
-    const conditionalLogicResult = await pool.query(`
-      SELECT cl.*, 
-             sc.name as source_control_name, 
-             tc.name as target_control_name,
-             sc.control_type as source_control_type,
-             tc.control_type as target_control_type
-      FROM conditional_logic cl
-      JOIN controls sc ON cl.source_control_id = sc.id
-      JOIN controls tc ON cl.target_control_id = tc.id
-      WHERE cl.form_id = $1
-    `, [formId]);
-    
-    res.json(conditionalLogicResult.rows);
-    
+    res.json(updatedForm);
   } catch (error) {
-    console.error('Error fetching conditional logic:', error);
-    res.status(500).json({ error: 'Failed to fetch conditional logic' });
+    console.error('Error updating form:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.delete('/api/forms/:id', async (req, res) => {
+  try {
+    const success = await storage.deleteForm(parseInt(req.params.id));
+    if (!success) {
+      return res.status(404).json({ error: 'Form not found' });
+    }
+    res.status(204).end();
+  } catch (error) {
+    console.error('Error deleting form:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// API endpoints for sections
+app.get('/api/forms/:formId/sections', async (req, res) => {
+  try {
+    const sections = await storage.getSections(parseInt(req.params.formId));
+    res.json(sections);
+  } catch (error) {
+    console.error('Error fetching sections:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// API endpoints for controls
+app.get('/api/sections/:sectionId/controls', async (req, res) => {
+  try {
+    const controls = await storage.getControls(parseInt(req.params.sectionId));
+    res.json(controls);
+  } catch (error) {
+    console.error('Error fetching controls:', error);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 
 // Start the server
 app.listen(port, '0.0.0.0', () => {
-  console.log(`Test server running at http://0.0.0.0:${port}`);
+  console.log(`Test API server listening at http://0.0.0.0:${port}`);
 });
