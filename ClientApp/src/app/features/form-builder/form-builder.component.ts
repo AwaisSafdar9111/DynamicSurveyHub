@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewChild, TemplateRef } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { CdkDragDrop, moveItemInArray, transferArrayItem } from '@angular/cdk/drag-drop';
@@ -19,6 +19,8 @@ import { ControlConfigComponent } from './control-config/control-config.componen
   standalone: false
 })
 export class FormBuilderComponent implements OnInit {
+  @ViewChild('editSectionDialog') editSectionDialog!: TemplateRef<any>;
+  
   formId: number | null = null;
   form: Form | null = null;
   formGroup: FormGroup;
@@ -38,6 +40,7 @@ export class FormBuilderComponent implements OnInit {
   
   isNewSection: boolean = false;
   sectionForm: FormGroup;
+  editingSectionIndex: number = -1;
 
   constructor(
     private route: ActivatedRoute,
@@ -175,19 +178,61 @@ export class FormBuilderComponent implements OnInit {
     });
   }
 
-  addSection(): void {
+  addSection(section?: Section, sectionIndex?: number): void {
     if (!this.form) return;
 
-    const newSection: Section = {
-      id: 0, // Will be set by the backend
-      formId: this.form.id,
-      title: `Section ${this.form.sections.length + 1}`,
-      description: '',
-      orderIndex: this.form.sections.length,
-      controls: []
-    };
+    this.isNewSection = !section;
+    
+    if (section && typeof sectionIndex === 'number') {
+      // Editing existing section
+      this.sectionForm.patchValue({
+        title: section.title,
+        description: section.description
+      });
+      this.editingSectionIndex = sectionIndex;
+    } else {
+      // Adding new section
+      this.sectionForm.patchValue({
+        title: `Section ${this.form.sections.length + 1}`,
+        description: ''
+      });
+      this.editingSectionIndex = -1;
+    }
+    
+    this.dialog.open(this.editSectionDialog, {
+      width: '500px'
+    });
+  }
 
-    this.form.sections.push(newSection);
+  saveSectionDialog(): void {
+    if (this.sectionForm.invalid) {
+      return;
+    }
+    
+    if (!this.form) return;
+    
+    const sectionData = this.sectionForm.value;
+    
+    if (this.isNewSection) {
+      // Add new section
+      const newSection: Section = {
+        id: 0, // Will be set by the backend
+        formId: this.form.id,
+        title: sectionData.title,
+        description: sectionData.description,
+        orderIndex: this.form.sections.length,
+        controls: []
+      };
+      
+      this.form.sections.push(newSection);
+    } else if (this.editingSectionIndex >= 0) {
+      // Update existing section
+      this.form.sections[this.editingSectionIndex].title = sectionData.title;
+      this.form.sections[this.editingSectionIndex].description = sectionData.description;
+    }
+    
+    this.dialog.closeAll();
+    this.snackBar.open('Section saved successfully', 'Close', { duration: 3000 });
   }
 
   deleteSection(index: number): void {
@@ -359,15 +404,5 @@ export class FormBuilderComponent implements OnInit {
   getControlIcon(type: string): string {
     const control = this.availableControls.find(c => c.type === type);
     return control ? control.icon : 'help_outline';
-  }
-  
-  saveSectionDialog(): void {
-    if (this.sectionForm.invalid) {
-      return;
-    }
-    
-    // Dialog data would be handled here
-    // This is a placeholder for the actual implementation
-    this.snackBar.open('Section saved successfully', 'Close', { duration: 3000 });
   }
 }

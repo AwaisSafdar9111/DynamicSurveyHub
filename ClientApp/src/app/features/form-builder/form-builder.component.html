@@ -1,131 +1,114 @@
-<div class="container-fluid">
-  <div class="row">
-    <div class="col-12">
-      <h1>Form Builder</h1>
-      
-      <div class="d-flex justify-content-between mb-3 flex-wrap">
-        <button mat-raised-button color="primary" (click)="saveForm()" class="mb-2">
-          <mat-icon>save</mat-icon> Save Form
-        </button>
-        <button mat-raised-button color="accent" (click)="previewForm()" [disabled]="!form || form.sections.length === 0" class="mb-2">
-          <mat-icon>preview</mat-icon> Preview Form
-        </button>
-      </div>
-      
-      <div class="form-header-inputs">
-        <div class="mb-3">
-          <mat-form-field class="w-100">
-            <mat-label>Form Title</mat-label>
-            <input matInput [(ngModel)]="form.title" placeholder="Enter form title" required>
-          </mat-form-field>
-        </div>
-        
-        <div class="mb-3">
-          <mat-form-field class="w-100">
-            <mat-label>Form Description</mat-label>
-            <textarea matInput [(ngModel)]="form.description" placeholder="Enter form description" rows="2"></textarea>
-          </mat-form-field>
-        </div>
-        
-        <mat-checkbox [(ngModel)]="form.isPublished" class="mb-3">
-          Published (available for assignments)
-        </mat-checkbox>
-      </div>
+<div class="form-builder-container">
+  <div class="form-builder-header">
+    <div class="header-buttons">
+      <button mat-flat-button color="primary" class="save-button" (click)="saveForm()">
+        <mat-icon>save</mat-icon> Save Form
+      </button>
+      <button mat-flat-button class="preview-button" (click)="previewForm()" [disabled]="!form || form.sections.length === 0">
+        <mat-icon>visibility</mat-icon> Preview Form
+      </button>
+    </div>
+    <div class="header-draft">
+      <mat-slide-toggle [(ngModel)]="form.isPublished" color="primary">Draft</mat-slide-toggle>
     </div>
   </div>
   
-  <div class="row">
+  <div class="form-metadata">
+    <div class="form-title">
+      <label>Form Title</label>
+      <input type="text" [(ngModel)]="form.title" placeholder="New Form" class="form-control">
+    </div>
+    
+    <div class="form-description">
+      <label>Form Description</label>
+      <textarea [(ngModel)]="form.description" placeholder="Enter a description for your form" class="form-control" rows="3"></textarea>
+    </div>
+  </div>
+  
+  <div class="form-content">
     <!-- Controls Palette -->
-    <div class="col-md-4 mb-4">
-      <mat-card>
-        <mat-card-header>
-          <mat-card-title>Available Controls</mat-card-title>
-          <mat-card-subtitle>Drag controls to sections</mat-card-subtitle>
-        </mat-card-header>
-        <mat-card-content>
-          <div 
-            cdkDropList
-            id="available-controls"
-            [cdkDropListData]="availableControls"
-            [cdkDropListConnectedTo]="getSectionIds()"
-            cdkDropListSortingDisabled="true"
-            class="available-controls-container">
-            <div class="control-box" *ngFor="let control of availableControls" cdkDrag [cdkDragData]="control">
-              <div class="d-flex align-items-center">
-                <mat-icon class="mr-2">{{ getControlIcon(control.type) }}</mat-icon>
-                <span>{{ control.type }}</span>
-              </div>
-              <!-- Preview when dragging -->
-              <div *cdkDragPreview class="cdk-drag-preview control-box">
-                <div class="d-flex align-items-center">
-                  <mat-icon class="mr-2">{{ getControlIcon(control.type) }}</mat-icon>
-                  <span><strong>{{ control.type }}</strong></span>
-                </div>
-              </div>
-            </div>
+    <div class="controls-panel">
+      <div class="panel-header">
+        <h3>Available Controls</h3>
+        <p>Drag controls to sections or click to add</p>
+      </div>
+      
+      <div 
+        cdkDropList
+        id="available-controls"
+        [cdkDropListData]="availableControls"
+        [cdkDropListConnectedTo]="getSectionIds()"
+        cdkDropListSortingDisabled="true"
+        class="controls-list">
+        
+        <div class="control-item" *ngFor="let control of availableControls" cdkDrag [cdkDragData]="control">
+          <mat-icon>{{ getControlIcon(control.type) }}</mat-icon>
+          <span>{{ control.label }}</span>
+          
+          <!-- Preview when dragging -->
+          <div *cdkDragPreview class="control-drag-preview">
+            <mat-icon>{{ getControlIcon(control.type) }}</mat-icon>
+            <span>{{ control.label }}</span>
           </div>
-        </mat-card-content>
-      </mat-card>
+        </div>
+      </div>
     </div>
 
     <!-- Form Sections -->
-    <div class="col-md-8">
+    <div class="sections-panel">
       <div *ngIf="form">
-        <div *ngFor="let section of form.sections; let sectionIndex = index" class="mb-4">
-          <mat-card>
-            <mat-card-header>
-              <mat-card-title class="d-flex justify-content-between align-items-center">
-                <span>{{ section.title }}</span>
+        <div *ngFor="let section of form.sections; let sectionIndex = index" class="section-container">
+          <div class="section-header">
+            <h3>
+              {{ section.title }} 
+              <button mat-icon-button (click)="addSection(section, sectionIndex)" class="edit-icon">
+                <mat-icon>edit</mat-icon>
+              </button>
+            </h3>
+            <p>{{ section.description || 'First section of your form' }}</p>
+          </div>
+          
+          <div 
+            cdkDropList
+            id="section-{{sectionIndex}}"
+            [cdkDropListData]="section.controls"
+            [cdkDropListConnectedTo]="getSectionConnections()"
+            (cdkDropListDropped)="dropControl($event, sectionIndex)"
+            class="section-content">
+            
+            <div class="control-item-added" *ngFor="let control of section.controls; let controlIndex = index" cdkDrag>
+              <div class="control-item-content">
                 <div>
-                  <button mat-icon-button color="warn" (click)="deleteSection(sectionIndex)" *ngIf="form.sections.length > 1">
+                  <strong>{{ control.label }}</strong>
+                  <span class="control-type">{{ control.type }}</span>
+                  <span *ngIf="control.isRequired" class="required-badge">Required</span>
+                </div>
+                <div class="control-actions">
+                  <button mat-icon-button (click)="editControl(control, sectionIndex)">
+                    <mat-icon>edit</mat-icon>
+                  </button>
+                  <button mat-icon-button (click)="deleteControl(controlIndex, sectionIndex)">
                     <mat-icon>delete</mat-icon>
                   </button>
                 </div>
-              </mat-card-title>
-              <mat-card-subtitle *ngIf="section.description">{{ section.description }}</mat-card-subtitle>
-            </mat-card-header>
-            <mat-card-content>
-              <div 
-                cdkDropList
-                id="section-{{sectionIndex}}"
-                [cdkDropListData]="section.controls"
-                [cdkDropListConnectedTo]="getSectionConnections()"
-                (cdkDropListDropped)="dropControl($event, sectionIndex)"
-                class="form-controls-container">
-                <div class="control-box" *ngFor="let control of section.controls; let controlIndex = index" cdkDrag>
-                  <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                      <strong>{{ control.label }}</strong>
-                      <span class="ml-2 control-type-badge">{{ control.type }}</span>
-                      <span *ngIf="control.isRequired" class="ml-2 required-badge">Required</span>
-                    </div>
-                    <div>
-                      <button mat-icon-button color="primary" (click)="editControl(control, sectionIndex)">
-                        <mat-icon>edit</mat-icon>
-                      </button>
-                      <button mat-icon-button color="warn" (click)="deleteControl(controlIndex, sectionIndex)">
-                        <mat-icon>delete</mat-icon>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-                <div *ngIf="section.controls.length === 0" class="empty-section-message">
-                  <mat-icon>arrow_downward</mat-icon>
-                  <p>Drop controls here to add to this section</p>
-                </div>
               </div>
-            </mat-card-content>
-          </mat-card>
+            </div>
+            
+            <div *ngIf="section.controls.length === 0" class="empty-section">
+              <mat-icon>text_fields</mat-icon>
+              <p>Drop controls here to add to this section</p>
+            </div>
+          </div>
         </div>
 
-        <div class="text-center mt-3 mb-5">
-          <button mat-raised-button color="primary" (click)="addSection()">
-            <mat-icon>add_circle</mat-icon> Add New Section
+        <div class="add-section-button">
+          <button mat-flat-button color="primary" (click)="addSection()">
+            <mat-icon>add</mat-icon> Add New Section
           </button>
         </div>
       </div>
 
-      <div *ngIf="loading" class="text-center">
+      <div *ngIf="loading" class="loading-spinner">
         <mat-spinner diameter="40"></mat-spinner>
       </div>
     </div>
