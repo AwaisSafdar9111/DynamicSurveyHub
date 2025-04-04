@@ -1,0 +1,124 @@
+I am building a Dynamic Survey Application using Angular (Frontend) and .NET Core Web APIs (Backend) with Onion Architecture and SQL Server.
+I want to store everything in proper relational tables, not JSON.
+
+The application includes:
+
+Drag-and-drop Form Builder
+
+Form Submission (Validation + Conditional Logic)
+
+Workflow Module for assigning forms to users/roles/orgs
+
+🧩 Dynamic Control Types & Configurations
+🔤 1. Text Control
+Stored in Controls table with sub-type config in ControlConfigurations
+
+Config Options:
+
+InputType: "Text" | "Number" | "Email" | "Phone"
+
+If "Number" → MinValue, MaxValue
+
+If "Phone" → Enable Country Code selector
+
+🗣️ 2. Textarea
+Config:
+
+MaxLength
+
+✅ 3. Radio Group / Checkbox Group
+Stored in ControlOptions table (linked to ControlId)
+
+Config:
+
+SelectionType: "Single" | "Multiple"
+
+Options: List of OptionValue, OptionText, Score
+
+Dynamic Add/Remove options
+
+Scoring per option (numeric)
+
+⬇️ 4. Dropdown
+Config:
+
+SelectionType: "Single" | "Multiple"
+
+Searchable: boolean
+
+Options stored in ControlOptions
+
+Supports dynamic scoring
+
+📁 5. File Upload
+Config:
+
+AcceptedFileTypes (CSV, PDF, JPG, etc.)
+
+SelectionType: "Single" | "Multiple"
+
+✍️ 6. Signature
+A control that allows drawing digital signatures (stored as image or SVG)
+
+No config needed, just enable it as a control
+
+📍 7. Location Picker
+Config:
+
+Auto-captures Latitude and Longitude
+
+Optional: Show map or just capture coordinates in background
+
+📌 8. Note Control
+Display-only control used for guidance in forms
+
+Config:
+
+NoteText or HTMLContent
+
+🛠 Required Database Tables (SQL Server - NOT JSON Based)
+Replit AI should generate schema for:
+
+Forms
+
+Sections
+
+Controls
+
+ControlOptions
+
+ControlConfigurations (one-to-one or polymorphic config model)
+
+ControlConditions (for trigger logic)
+
+ControlSortOrders
+
+FormSubmissions
+
+ControlResponses
+
+FormAssignments (for workflows)
+
+🧠 Smart Features to Enable
+Drag-and-drop sorting (sections + controls)
+
+Conditional logic (e.g., "If Question A = Yes → show Question B")
+
+Control-level validation (e.g., min/max, regex, required)
+
+Dynamic scoring per option
+
+Preview Mode
+
+Role-based access (workflow module)
+
+Draft + submit modes in inspection module
+
+🧱 Tech Stack
+Angular 15+ with Tailwind or Angular Material
+
+.NET 7+ Web API
+
+SQL Server with EF Core (Normalized schema)
+
+Angular CDK for drag-drop
