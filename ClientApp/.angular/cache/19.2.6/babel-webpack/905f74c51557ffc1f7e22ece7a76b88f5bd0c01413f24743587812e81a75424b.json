@@ -1,0 +1,1 @@
+{"ast":null,"code":"export { a as CdkObserveContent, C as ContentObserver, M as MutationObserverFactory, O as ObserversModule } from './observe-content-937cdfbe.mjs';\nimport '@angular/core';\nimport 'rxjs';\nimport 'rxjs/operators';\nimport './element-15999318.mjs';\n//# sourceMappingURL=observers.mjs.map","map":null,"metadata":{},"sourceType":"module","externalDependencies":[]}

@@ -1,116 +1,139 @@
-<div class="container mt-4">
-  <div class="d-flex justify-content-between align-items-center mb-4">
-    <h1>{{ formId ? 'Edit Form' : 'Create New Form' }}</h1>
-    <div>
-      <button mat-raised-button color="primary" (click)="saveForm()" [disabled]="loading">
-        <mat-icon>save</mat-icon> Save
-      </button>
-      <button mat-raised-button color="accent" class="ml-2" (click)="publishForm()" 
-              [disabled]="loading || !formId || (form && form.isPublished)">
-        <mat-icon>publish</mat-icon> Publish
-      </button>
-      <button mat-raised-button color="basic" class="ml-2" (click)="previewForm()" 
-              [disabled]="loading || !formId">
-        <mat-icon>visibility</mat-icon> Preview
-      </button>
-    </div>
-  </div>
-
-  <div *ngIf="loading" class="d-flex justify-content-center">
-    <mat-spinner diameter="40"></mat-spinner>
-  </div>
-
-  <form [formGroup]="formGroup" *ngIf="!loading">
-    <div class="row">
-      <div class="col-md-8">
+<div class="container-fluid">
+  <div class="row">
+    <div class="col-12">
+      <h1>Form Builder</h1>
+      
+      <div class="d-flex justify-content-between mb-3">
+        <button mat-raised-button color="primary" (click)="saveForm()">
+          <mat-icon>save</mat-icon> Save Form
+        </button>
+        <button mat-raised-button color="accent" (click)="previewForm()" [disabled]="!form || form.sections.length === 0">
+          <mat-icon>preview</mat-icon> Preview Form
+        </button>
+      </div>
+      
+      <div class="mb-3">
         <mat-form-field class="w-100">
           <mat-label>Form Title</mat-label>
-          <input matInput formControlName="title" placeholder="Enter form title">
-          <mat-error *ngIf="formGroup.get('title')?.hasError('required')">Title is required</mat-error>
+          <input matInput [(ngModel)]="form.title" placeholder="Enter form title" required>
         </mat-form-field>
       </div>
-
-      <div class="col-md-12">
+      
+      <div class="mb-3">
         <mat-form-field class="w-100">
-          <mat-label>Description</mat-label>
-          <textarea matInput formControlName="description" placeholder="Enter form description" rows="3"></textarea>
+          <mat-label>Form Description</mat-label>
+          <textarea matInput [(ngModel)]="form.description" placeholder="Enter form description" rows="2"></textarea>
         </mat-form-field>
       </div>
+      
+      <mat-checkbox [(ngModel)]="form.isPublished" class="mb-3">
+        Published (available for assignments)
+      </mat-checkbox>
     </div>
-
-    <div class="row mt-4">
-      <div class="col-md-4">
-        <div class="control-palette">
-          <h3>Available Controls</h3>
+  </div>
+  
+  <div class="row">
+    <div class="col-md-4">
+      <mat-card>
+        <mat-card-header>
+          <mat-card-title>Available Controls</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
           <div 
             cdkDropList
+            id="available-controls"
             [cdkDropListData]="availableControls"
-            [cdkDropListConnectedTo]="form?.sections.map((_, i) => 'section-' + i)"
-            cdkDropListSortingDisabled
-            class="control-list">
+            class="available-controls-container">
             <div class="control-box" *ngFor="let control of availableControls" cdkDrag>
               <div class="d-flex align-items-center">
-                <mat-icon class="mr-2">{{ control.icon }}</mat-icon>
-                <span>{{ control.label }}</span>
+                <mat-icon class="mr-2">{{ getControlIcon(control.type) }}</mat-icon>
+                <span>{{ control.type }}</span>
               </div>
             </div>
           </div>
-        </div>
-      </div>
+        </mat-card-content>
+      </mat-card>
+    </div>
 
-      <div class="col-md-8">
-        <div *ngIf="form">
-          <div *ngFor="let section of form.sections; let sectionIndex = index" class="mb-4">
-            <mat-card>
-              <mat-card-header>
-                <mat-card-title class="d-flex justify-content-between align-items-center">
-                  <span>{{ section.title }}</span>
-                  <button mat-icon-button color="warn" (click)="deleteSection(sectionIndex)" *ngIf="form.sections.length > 1">
-                    <mat-icon>delete</mat-icon>
-                  </button>
-                </mat-card-title>
-                <mat-card-subtitle *ngIf="section.description">{{ section.description }}</mat-card-subtitle>
-              </mat-card-header>
-              <mat-card-content>
-                <div 
-                  cdkDropList
-                  [id]="'section-' + sectionIndex"
-                  [cdkDropListData]="section.controls"
-                  [cdkDropListConnectedTo]="['available-controls']"
-                  (cdkDropListDropped)="dropControl($event, sectionIndex)"
-                  class="form-controls-container">
-                  <div class="control-box" *ngFor="let control of section.controls; let controlIndex = index" cdkDrag>
-                    <div class="d-flex justify-content-between align-items-center">
-                      <div>
-                        <strong>{{ control.label }}</strong>
-                        <span class="ml-2 control-type-badge">{{ control.type }}</span>
-                        <span *ngIf="control.isRequired" class="ml-2 required-badge">Required</span>
-                      </div>
-                      <div>
-                        <button mat-icon-button color="primary" (click)="editControl(control, sectionIndex)">
-                          <mat-icon>edit</mat-icon>
-                        </button>
-                        <button mat-icon-button color="warn" (click)="deleteControl(controlIndex, sectionIndex)">
-                          <mat-icon>delete</mat-icon>
-                        </button>
-                      </div>
+    <div class="col-md-8">
+      <div *ngIf="form">
+        <div *ngFor="let section of form.sections; let sectionIndex = index" class="mb-4">
+          <mat-card>
+            <mat-card-header>
+              <mat-card-title class="d-flex justify-content-between align-items-center">
+                <span>{{ section.title }}</span>
+                <button mat-icon-button color="warn" (click)="deleteSection(sectionIndex)" *ngIf="form.sections.length > 1">
+                  <mat-icon>delete</mat-icon>
+                </button>
+              </mat-card-title>
+              <mat-card-subtitle *ngIf="section.description">{{ section.description }}</mat-card-subtitle>
+            </mat-card-header>
+            <mat-card-content>
+              <div 
+                cdkDropList
+                id="section-{{sectionIndex}}"
+                [cdkDropListData]="section.controls"
+                [cdkDropListConnectedTo]="['available-controls']"
+                (cdkDropListDropped)="dropControl($event, sectionIndex)"
+                class="form-controls-container">
+                <div class="control-box" *ngFor="let control of section.controls; let controlIndex = index" cdkDrag>
+                  <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                      <strong>{{ control.label }}</strong>
+                      <span class="ml-2 control-type-badge">{{ control.type }}</span>
+                      <span *ngIf="control.isRequired" class="ml-2 required-badge">Required</span>
+                    </div>
+                    <div>
+                      <button mat-icon-button color="primary" (click)="editControl(control, sectionIndex)">
+                        <mat-icon>edit</mat-icon>
+                      </button>
+                      <button mat-icon-button color="warn" (click)="deleteControl(controlIndex, sectionIndex)">
+                        <mat-icon>delete</mat-icon>
+                      </button>
                     </div>
                   </div>
-                  <div *ngIf="section.controls.length === 0" class="empty-section">
-                    <p class="text-muted">Drag and drop controls here</p>
-                  </div>
                 </div>
-              </mat-card-content>
-            </mat-card>
-          </div>
+                <div *ngIf="section.controls.length === 0" class="empty-section">
+                  <p class="text-muted">Drag and drop controls here</p>
+                </div>
+              </div>
+            </mat-card-content>
+          </mat-card>
+        </div>
 
-          <div class="text-center mt-3">
-            <button mat-raised-button color="basic" (click)="addSection()">
-              <mat-icon>add</mat-icon> Add Section
-            </button>
-          </div>
+        <div class="text-center mt-3">
+          <button mat-raised-button color="basic" (click)="addSection()">
+            <mat-icon>add</mat-icon> Add Section
+          </button>
         </div>
       </div>
+
+      <div *ngIf="loading" class="text-center">
+        <mat-spinner diameter="40"></mat-spinner>
+      </div>
     </div>
-  </form>
+  </div>
 </div>
+
+<!-- Edit Section Dialog -->
+<ng-template #editSectionDialog>
+  <h2 mat-dialog-title>{{ isNewSection ? 'Add Section' : 'Edit Section' }}</h2>
+  <mat-dialog-content>
+    <form [formGroup]="sectionForm">
+      <mat-form-field class="w-100 mb-3">
+        <mat-label>Section Title</mat-label>
+        <input matInput formControlName="title" placeholder="Enter section title" required>
+        <mat-error *ngIf="sectionForm.get('title')?.hasError('required')">Title is required</mat-error>
+      </mat-form-field>
+      
+      <mat-form-field class="w-100">
+        <mat-label>Section Description</mat-label>
+        <textarea matInput formControlName="description" placeholder="Enter section description" rows="3"></textarea>
+      </mat-form-field>
+    </form>
+  </mat-dialog-content>
+  <mat-dialog-actions align="end">
+    <button mat-button mat-dialog-close>Cancel</button>
+    <button mat-raised-button color="primary" (click)="saveSectionDialog()" [disabled]="sectionForm.invalid">Save</button>
+  </mat-dialog-actions>
+</ng-template>

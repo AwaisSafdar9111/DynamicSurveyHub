@@ -9,7 +9,8 @@ import { Control, ControlResponse, FormSubmission } from '../../../shared/models
 
 @Component({
   selector: 'app-form-preview',
-  templateUrl: './form-preview.component.html'
+  templateUrl: './form-preview.component.html',
+  standalone: false
 })
 export class FormPreviewComponent implements OnInit {
   formId: number;

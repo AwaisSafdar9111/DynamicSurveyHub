@@ -34,6 +34,9 @@ export class FormBuilderComponent implements OnInit {
     { type: 'LocationPicker', label: 'Location Picker', icon: 'location_on' },
     { type: 'Note', label: 'Note', icon: 'info' }
   ];
+  
+  isNewSection: boolean = false;
+  sectionForm: FormGroup;
 
   constructor(
     private route: ActivatedRoute,
@@ -45,6 +48,11 @@ export class FormBuilderComponent implements OnInit {
     private snackBar: MatSnackBar
   ) { 
     this.formGroup = this.fb.group({
+      title: ['', Validators.required],
+      description: ['']
+    });
+    
+    this.sectionForm = this.fb.group({
       title: ['', Validators.required],
       description: ['']
     });
@@ -301,5 +309,20 @@ export class FormBuilderComponent implements OnInit {
     } else {
       this.snackBar.open('Please save the form before previewing', 'Close', { duration: 3000 });
     }
+  }
+  
+  getControlIcon(type: string): string {
+    const control = this.availableControls.find(c => c.type === type);
+    return control ? control.icon : 'help_outline';
+  }
+  
+  saveSectionDialog(): void {
+    if (this.sectionForm.invalid) {
+      return;
+    }
+    
+    // Dialog data would be handled here
+    // This is a placeholder for the actual implementation
+    this.snackBar.open('Section saved successfully', 'Close', { duration: 3000 });
   }
 }

@@ -27,7 +27,7 @@ task = "packager.installForAll"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "cd ClientApp && export NG_CLI_ANALYTICS=false && npx ng serve --host 0.0.0.0 --port 5000 --disable-host-check"
+args = "cd ClientApp && export NODE_OPTIONS=\"--max-old-space-size=2048\" && export NG_CLI_ANALYTICS=false && npx ng serve --host 0.0.0.0 --port 5000 --disable-host-check"
 waitForPort = 5000
 
 [deployment]

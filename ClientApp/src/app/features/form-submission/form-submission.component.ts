@@ -8,7 +8,8 @@ import { Form } from '../../shared/models/form.model';
 
 @Component({
   selector: 'app-form-submission',
-  templateUrl: './form-submission.component.html'
+  templateUrl: './form-submission.component.html',
+  standalone: false
 })
 export class FormSubmissionComponent implements OnInit {
   submissionId: number | null = null;

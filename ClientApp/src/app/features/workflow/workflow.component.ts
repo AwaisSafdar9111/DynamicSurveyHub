@@ -9,7 +9,8 @@ import { Form } from '../../shared/models/form.model';
 
 @Component({
   selector: 'app-workflow',
-  templateUrl: './workflow.component.html'
+  templateUrl: './workflow.component.html',
+  standalone: false
 })
 export class WorkflowComponent implements OnInit {
   assignments: FormAssignment[] = [];
