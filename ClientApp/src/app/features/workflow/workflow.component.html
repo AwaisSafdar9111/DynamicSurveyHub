@@ -1,0 +1,133 @@
+<div class="container mt-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Form Assignments</h1>
+    <button mat-raised-button color="primary" (click)="toggleNewAssignmentForm()">
+      <mat-icon>add</mat-icon> Assign Form
+    </button>
+  </div>
+
+  <div *ngIf="showNewAssignmentForm" class="mb-4">
+    <mat-card>
+      <mat-card-header>
+        <mat-card-title>New Assignment</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <form [formGroup]="newAssignmentForm" (ngSubmit)="assignForm()">
+          <div class="row">
+            <div class="col-md-4">
+              <mat-form-field class="w-100">
+                <mat-label>Form</mat-label>
+                <mat-select formControlName="formId">
+                  <mat-option *ngFor="let form of forms" [value]="form.id">
+                    {{ form.title }}
+                  </mat-option>
+                </mat-select>
+                <mat-error *ngIf="newAssignmentForm.get('formId')?.hasError('required')">
+                  Form is required
+                </mat-error>
+              </mat-form-field>
+            </div>
+            
+            <div class="col-md-4">
+              <mat-form-field class="w-100">
+                <mat-label>Assign To</mat-label>
+                <mat-select formControlName="userId">
+                  <mat-option *ngFor="let user of users" [value]="user.id">
+                    {{ user.name }}
+                  </mat-option>
+                </mat-select>
+                <mat-error *ngIf="newAssignmentForm.get('userId')?.hasError('required')">
+                  User is required
+                </mat-error>
+              </mat-form-field>
+            </div>
+            
+            <div class="col-md-4">
+              <mat-form-field class="w-100">
+                <mat-label>Due Date</mat-label>
+                <input matInput [matDatepicker]="picker" formControlName="dueDate">
+                <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+                <mat-datepicker #picker></mat-datepicker>
+              </mat-form-field>
+            </div>
+          </div>
+          
+          <div class="text-right">
+            <button mat-button type="button" (click)="toggleNewAssignmentForm()">Cancel</button>
+            <button mat-raised-button color="primary" type="submit" [disabled]="loading">
+              Assign
+            </button>
+          </div>
+        </form>
+      </mat-card-content>
+    </mat-card>
+  </div>
+
+  <div *ngIf="loading" class="d-flex justify-content-center">
+    <mat-spinner diameter="40"></mat-spinner>
+  </div>
+
+  <div *ngIf="!loading">
+    <mat-card>
+      <mat-card-content>
+        <table mat-table [dataSource]="assignments" class="w-100">
+          <!-- Form Title Column -->
+          <ng-container matColumnDef="formTitle">
+            <th mat-header-cell *matHeaderCellDef>Form</th>
+            <td mat-cell *matCellDef="let assignment">{{ getFormTitle(assignment.formId) }}</td>
+          </ng-container>
+
+          <!-- Assigned To Column -->
+          <ng-container matColumnDef="assignedTo">
+            <th mat-header-cell *matHeaderCellDef>Assigned To</th>
+            <td mat-cell *matCellDef="let assignment">{{ getUserName(assignment.userId) }}</td>
+          </ng-container>
+
+          <!-- Assigned Date Column -->
+          <ng-container matColumnDef="assignedDate">
+            <th mat-header-cell *matHeaderCellDef>Assigned Date</th>
+            <td mat-cell *matCellDef="let assignment">{{ formatDate(assignment.assignedDate) }}</td>
+          </ng-container>
+
+          <!-- Due Date Column -->
+          <ng-container matColumnDef="dueDate">
+            <th mat-header-cell *matHeaderCellDef>Due Date</th>
+            <td mat-cell *matCellDef="let assignment">{{ formatDate(assignment.dueDate) }}</td>
+          </ng-container>
+
+          <!-- Status Column -->
+          <ng-container matColumnDef="status">
+            <th mat-header-cell *matHeaderCellDef>Status</th>
+            <td mat-cell *matCellDef="let assignment">
+              <span class="badge" [ngClass]="getStatusBadgeClass(assignment.status)">
+                {{ assignment.status }}
+              </span>
+            </td>
+          </ng-container>
+
+          <!-- Actions Column -->
+          <ng-container matColumnDef="actions">
+            <th mat-header-cell *matHeaderCellDef>Actions</th>
+            <td mat-cell *matCellDef="let assignment">
+              <button mat-icon-button color="accent" 
+                     (click)="completeAssignment(assignment.id)"
+                     [disabled]="assignment.status === 'Completed'">
+                <mat-icon>check_circle</mat-icon>
+              </button>
+              <button mat-icon-button color="warn" (click)="deleteAssignment(assignment.id)">
+                <mat-icon>delete</mat-icon>
+              </button>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+        </table>
+
+        <div *ngIf="assignments.length === 0" class="p-4 text-center">
+          <p class="text-muted">No assignments found</p>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+</div>

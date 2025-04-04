@@ -1,0 +1,16 @@
+<mat-toolbar color="primary">
+  <mat-toolbar-row>
+    <a mat-button routerLink="/">
+      <mat-icon>assessment</mat-icon>
+      <span class="ml-2">{{ title }}</span>
+    </a>
+    <span class="spacer"></span>
+    <a mat-button routerLink="/forms">Form Builder</a>
+    <a mat-button routerLink="/submissions">Form Submissions</a>
+    <a mat-button routerLink="/workflow">Workflow</a>
+  </mat-toolbar-row>
+</mat-toolbar>
+
+<div class="content-container">
+  <router-outlet></router-outlet>
+</div>
