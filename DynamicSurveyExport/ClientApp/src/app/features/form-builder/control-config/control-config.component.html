@@ -1,0 +1,259 @@
+<h2 mat-dialog-title>{{ data.control ? 'Edit Control' : 'Add New Control' }}</h2>
+
+<form [formGroup]="form" (ngSubmit)="onSubmit()">
+  <mat-dialog-content class="mat-typography">
+    <div class="row">
+      <div class="col-md-8">
+        <mat-form-field class="w-100">
+          <mat-label>Label</mat-label>
+          <input matInput formControlName="label" placeholder="Enter control label">
+          <mat-error *ngIf="form.get('label')?.hasError('required')">Label is required</mat-error>
+        </mat-form-field>
+      </div>
+
+      <div class="col-md-4">
+        <mat-form-field class="w-100">
+          <mat-label>Control Type</mat-label>
+          <mat-select formControlName="type" [disabled]="!!data.control">
+            <mat-option value="Text">Text Field</mat-option>
+            <mat-option value="Textarea">Textarea</mat-option>
+            <mat-option value="RadioGroup">Radio Group</mat-option>
+            <mat-option value="CheckboxGroup">Checkbox Group</mat-option>
+            <mat-option value="Dropdown">Dropdown</mat-option>
+            <mat-option value="FileUpload">File Upload</mat-option>
+            <mat-option value="Signature">Signature</mat-option>
+            <mat-option value="LocationPicker">Location Picker</mat-option>
+            <mat-option value="Note">Note/Information</mat-option>
+          </mat-select>
+        </mat-form-field>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-md-12">
+        <mat-checkbox formControlName="isRequired" *ngIf="controlType !== 'Note'">Required</mat-checkbox>
+      </div>
+    </div>
+
+    <!-- Configuration based on control type -->
+    <div formGroupName="configuration" class="mt-3">
+      <h3>Control Configuration</h3>
+
+      <!-- Text Configuration -->
+      <div *ngIf="controlType === 'Text'" class="row">
+        <div class="col-md-6">
+          <mat-form-field class="w-100">
+            <mat-label>Input Type</mat-label>
+            <mat-select formControlName="inputType">
+              <mat-option *ngFor="let type of inputTypes" [value]="type.value">
+                {{ type.label }}
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
+        
+        <div class="col-md-6" *ngIf="form.get('configuration.inputType')?.value === 'Number'">
+          <div class="row">
+            <div class="col-md-6">
+              <mat-form-field class="w-100">
+                <mat-label>Min Value</mat-label>
+                <input matInput type="number" formControlName="minValue">
+              </mat-form-field>
+            </div>
+            <div class="col-md-6">
+              <mat-form-field class="w-100">
+                <mat-label>Max Value</mat-label>
+                <input matInput type="number" formControlName="maxValue">
+              </mat-form-field>
+            </div>
+          </div>
+        </div>
+        
+        <div class="col-md-6" *ngIf="form.get('configuration.inputType')?.value === 'Phone'">
+          <mat-checkbox formControlName="enableCountryCode">Enable Country Code Selector</mat-checkbox>
+        </div>
+      </div>
+
+      <!-- Textarea Configuration -->
+      <div *ngIf="controlType === 'Textarea'" class="row">
+        <div class="col-md-6">
+          <mat-form-field class="w-100">
+            <mat-label>Max Length</mat-label>
+            <input matInput type="number" formControlName="maxLength">
+          </mat-form-field>
+        </div>
+      </div>
+
+      <!-- Radio/Checkbox/Dropdown Configuration -->
+      <div *ngIf="['RadioGroup', 'CheckboxGroup', 'Dropdown'].includes(controlType)" class="row">
+        <div class="col-md-6">
+          <mat-form-field class="w-100">
+            <mat-label>Selection Type</mat-label>
+            <mat-select formControlName="selectionType">
+              <mat-option *ngFor="let type of selectionTypes" [value]="type.value">
+                {{ type.label }}
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
+        
+        <div class="col-md-6" *ngIf="controlType === 'Dropdown'">
+          <mat-checkbox formControlName="searchable">Searchable</mat-checkbox>
+        </div>
+      </div>
+
+      <!-- File Upload Configuration -->
+      <div *ngIf="controlType === 'FileUpload'" class="row">
+        <div class="col-md-6">
+          <mat-form-field class="w-100">
+            <mat-label>Selection Type</mat-label>
+            <mat-select formControlName="selectionType">
+              <mat-option *ngFor="let type of selectionTypes" [value]="type.value">
+                {{ type.label }}
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
+        
+        <div class="col-md-12">
+          <mat-form-field class="w-100">
+            <mat-label>Accepted File Types</mat-label>
+            <mat-select formControlName="acceptedFileTypes" multiple>
+              <mat-option *ngFor="let type of acceptedFileTypes" [value]="type.value">
+                {{ type.label }}
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
+      </div>
+
+      <!-- Location Picker Configuration -->
+      <div *ngIf="controlType === 'LocationPicker'" class="row">
+        <div class="col-md-6">
+          <mat-checkbox formControlName="showMap">Show Map</mat-checkbox>
+        </div>
+      </div>
+
+      <!-- Note Configuration -->
+      <div *ngIf="controlType === 'Note'" class="row">
+        <div class="col-md-12">
+          <mat-form-field class="w-100">
+            <mat-label>Note Text</mat-label>
+            <textarea matInput formControlName="noteText" rows="4"></textarea>
+          </mat-form-field>
+        </div>
+      </div>
+    </div>
+
+    <!-- Options Configuration -->
+    <div *ngIf="['RadioGroup', 'CheckboxGroup', 'Dropdown'].includes(controlType)" class="mt-3">
+      <h3>
+        Options
+        <button type="button" mat-mini-fab color="primary" class="ml-2" (click)="addOption()">
+          <mat-icon>add</mat-icon>
+        </button>
+      </h3>
+      
+      <div formArrayName="options">
+        <div *ngFor="let option of options.controls; let i = index" [formGroupName]="i" class="row align-items-center mb-2">
+          <div class="col-md-4">
+            <mat-form-field class="w-100">
+              <mat-label>Value</mat-label>
+              <input matInput formControlName="value" placeholder="Option value">
+              <mat-error *ngIf="option.get('value')?.hasError('required')">Value is required</mat-error>
+            </mat-form-field>
+          </div>
+          <div class="col-md-4">
+            <mat-form-field class="w-100">
+              <mat-label>Text</mat-label>
+              <input matInput formControlName="text" placeholder="Option text">
+              <mat-error *ngIf="option.get('text')?.hasError('required')">Text is required</mat-error>
+            </mat-form-field>
+          </div>
+          <div class="col-md-3">
+            <mat-form-field class="w-100">
+              <mat-label>Score</mat-label>
+              <input matInput type="number" formControlName="score" placeholder="Score">
+            </mat-form-field>
+          </div>
+          <div class="col-md-1">
+            <button type="button" mat-icon-button color="warn" (click)="removeOption(i)" [disabled]="options.length <= 1">
+              <mat-icon>delete</mat-icon>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Conditional Logic -->
+    <div class="mt-3">
+      <h3>
+        Conditional Logic
+        <button type="button" mat-mini-fab color="primary" class="ml-2" (click)="addCondition()" [disabled]="availableSourceControls.length === 0">
+          <mat-icon>add</mat-icon>
+        </button>
+      </h3>
+      
+      <div *ngIf="availableSourceControls.length === 0" class="alert alert-info">
+        No source controls available for conditions. Add other controls to the form first.
+      </div>
+      
+      <div formArrayName="conditions" *ngIf="availableSourceControls.length > 0">
+        <div *ngFor="let condition of conditions.controls; let i = index" [formGroupName]="i" class="row align-items-center mb-2">
+          <div class="col-md-3">
+            <mat-form-field class="w-100">
+              <mat-label>Source Control</mat-label>
+              <mat-select formControlName="sourceControlId">
+                <mat-option *ngFor="let control of availableSourceControls" [value]="control.id">
+                  {{ control.label }}
+                </mat-option>
+              </mat-select>
+              <mat-error *ngIf="condition.get('sourceControlId')?.hasError('required')">Source control is required</mat-error>
+            </mat-form-field>
+          </div>
+          <div class="col-md-2">
+            <mat-form-field class="w-100">
+              <mat-label>Operator</mat-label>
+              <mat-select formControlName="operator">
+                <mat-option *ngFor="let op of conditionOperators" [value]="op.value">
+                  {{ op.label }}
+                </mat-option>
+              </mat-select>
+              <mat-error *ngIf="condition.get('operator')?.hasError('required')">Operator is required</mat-error>
+            </mat-form-field>
+          </div>
+          <div class="col-md-2">
+            <mat-form-field class="w-100">
+              <mat-label>Value</mat-label>
+              <input matInput formControlName="value" placeholder="Condition value">
+              <mat-error *ngIf="condition.get('value')?.hasError('required')">Value is required</mat-error>
+            </mat-form-field>
+          </div>
+          <div class="col-md-2">
+            <mat-form-field class="w-100">
+              <mat-label>Action</mat-label>
+              <mat-select formControlName="action">
+                <mat-option *ngFor="let action of conditionActions" [value]="action.value">
+                  {{ action.label }}
+                </mat-option>
+              </mat-select>
+              <mat-error *ngIf="condition.get('action')?.hasError('required')">Action is required</mat-error>
+            </mat-form-field>
+          </div>
+          <div class="col-md-1">
+            <button type="button" mat-icon-button color="warn" (click)="removeCondition(i)">
+              <mat-icon>delete</mat-icon>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </mat-dialog-content>
+
+  <mat-dialog-actions align="end">
+    <button mat-button (click)="onCancel()">Cancel</button>
+    <button mat-raised-button color="primary" type="submit" [disabled]="form.invalid">
+      {{ data.control ? 'Update' : 'Add' }}
+    </button>
+  </mat-dialog-actions>
+</form>

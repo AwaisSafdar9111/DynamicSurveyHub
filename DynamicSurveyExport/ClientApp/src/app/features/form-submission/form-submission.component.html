@@ -1,0 +1,114 @@
+<div class="container mt-4">
+  <div *ngIf="!submissionId">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h1>Form Submissions</h1>
+    </div>
+
+    <div *ngIf="loading" class="d-flex justify-content-center">
+      <mat-spinner diameter="40"></mat-spinner>
+    </div>
+
+    <div *ngIf="!loading">
+      <mat-card>
+        <mat-card-content>
+          <table mat-table [dataSource]="submissions" class="w-100">
+            <!-- ID Column -->
+            <ng-container matColumnDef="id">
+              <th mat-header-cell *matHeaderCellDef>ID</th>
+              <td mat-cell *matCellDef="let submission">{{ submission.id }}</td>
+            </ng-container>
+
+            <!-- Form Title Column -->
+            <ng-container matColumnDef="formTitle">
+              <th mat-header-cell *matHeaderCellDef>Form</th>
+              <td mat-cell *matCellDef="let submission">
+                <!-- In a real application, we would fetch the form title -->
+                Form #{{ submission.formId }}
+              </td>
+            </ng-container>
+
+            <!-- Submitted By Column -->
+            <ng-container matColumnDef="submittedBy">
+              <th mat-header-cell *matHeaderCellDef>Submitted By</th>
+              <td mat-cell *matCellDef="let submission">{{ submission.submittedBy }}</td>
+            </ng-container>
+
+            <!-- Submitted Date Column -->
+            <ng-container matColumnDef="submittedDate">
+              <th mat-header-cell *matHeaderCellDef>Submitted Date</th>
+              <td mat-cell *matCellDef="let submission">{{ formatDate(submission.submittedDate) }}</td>
+            </ng-container>
+
+            <!-- Actions Column -->
+            <ng-container matColumnDef="actions">
+              <th mat-header-cell *matHeaderCellDef>Actions</th>
+              <td mat-cell *matCellDef="let submission">
+                <button mat-icon-button color="primary" (click)="viewSubmission(submission.id)">
+                  <mat-icon>visibility</mat-icon>
+                </button>
+              </td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+            <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+          </table>
+
+          <div *ngIf="submissions.length === 0" class="p-4 text-center">
+            <p class="text-muted">No submissions found</p>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </div>
+  </div>
+
+  <div *ngIf="submissionId">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h1>Submission Details</h1>
+      <button mat-raised-button color="basic" (click)="backToList()">
+        <mat-icon>arrow_back</mat-icon> Back to List
+      </button>
+    </div>
+
+    <div *ngIf="loading" class="d-flex justify-content-center">
+      <mat-spinner diameter="40"></mat-spinner>
+    </div>
+
+    <div *ngIf="!loading && submission && form">
+      <mat-card class="mb-4">
+        <mat-card-header>
+          <mat-card-title>{{ form.title }}</mat-card-title>
+          <mat-card-subtitle>
+            Submitted by {{ submission.submittedBy }} on {{ formatDate(submission.submittedDate) }}
+          </mat-card-subtitle>
+        </mat-card-header>
+      </mat-card>
+
+      <div *ngFor="let section of form.sections" class="mb-4">
+        <mat-card>
+          <mat-card-header>
+            <mat-card-title>{{ section.title }}</mat-card-title>
+            <mat-card-subtitle *ngIf="section.description">{{ section.description }}</mat-card-subtitle>
+          </mat-card-header>
+          <mat-card-content>
+            <table class="table">
+              <tbody>
+                <ng-container *ngFor="let control of section.controls">
+                  <tr *ngIf="control.type !== 'Note'">
+                    <td width="30%"><strong>{{ control.label }}</strong></td>
+                    <td>
+                      <ng-container *ngFor="let response of submission.responses">
+                        <ng-container *ngIf="response.controlId === control.id">
+                          <div [innerHTML]="getDisplayValue(response)"></div>
+                        </ng-container>
+                      </ng-container>
+                    </td>
+                  </tr>
+                </ng-container>
+              </tbody>
+            </table>
+          </mat-card-content>
+        </mat-card>
+      </div>
+    </div>
+  </div>
+</div>

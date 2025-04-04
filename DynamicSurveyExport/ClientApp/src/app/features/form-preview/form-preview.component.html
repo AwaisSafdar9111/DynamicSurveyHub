@@ -1,0 +1,131 @@
+<div class="form-preview-container">
+  <div *ngIf="loading" class="loading">
+    <mat-spinner diameter="50"></mat-spinner>
+    <p>Loading form...</p>
+  </div>
+
+  <div *ngIf="error" class="error-message">
+    <mat-icon>error</mat-icon>
+    <p>{{ error }}</p>
+  </div>
+
+  <div *ngIf="!loading && !error && form">
+    <header class="form-header">
+      <h1>{{ form.title }}</h1>
+      <p *ngIf="form.description">{{ form.description }}</p>
+    </header>
+
+    <form [formGroup]="formGroup" (ngSubmit)="onSubmit()">
+      <div *ngFor="let section of form.sections" class="form-section">
+        <div class="section-header">
+          <h2>{{ section.title }}</h2>
+          <p *ngIf="section.description">{{ section.description }}</p>
+        </div>
+
+        <div *ngFor="let control of section.controls" 
+             class="form-control-wrapper" 
+             [controlId]="control.id" appConditionalControl>
+          <div [ngSwitch]="control.control_type">
+            
+            <!-- Text input -->
+            <mat-form-field *ngSwitchCase="'text'" appearance="outline" class="full-width">
+              <mat-label>{{ control.label }}</mat-label>
+              <input matInput [formControlName]="'control_' + control.id" 
+                     [placeholder]="control.properties?.placeholder || ''" 
+                     [required]="control.required">
+              <mat-hint *ngIf="control.properties?.hint">{{ control.properties.hint }}</mat-hint>
+            </mat-form-field>
+
+            <!-- Textarea -->
+            <mat-form-field *ngSwitchCase="'textarea'" appearance="outline" class="full-width">
+              <mat-label>{{ control.label }}</mat-label>
+              <textarea matInput [formControlName]="'control_' + control.id" 
+                        [placeholder]="control.properties?.placeholder || ''" 
+                        [required]="control.required"
+                        [rows]="control.properties?.rows || 3"></textarea>
+              <mat-hint *ngIf="control.properties?.hint">{{ control.properties.hint }}</mat-hint>
+            </mat-form-field>
+
+            <!-- Number input -->
+            <mat-form-field *ngSwitchCase="'number'" appearance="outline" class="full-width">
+              <mat-label>{{ control.label }}</mat-label>
+              <input matInput type="number" [formControlName]="'control_' + control.id"
+                     [placeholder]="control.properties?.placeholder || ''" 
+                     [required]="control.required"
+                     [min]="control.properties?.min"
+                     [max]="control.properties?.max"
+                     [step]="control.properties?.step || 1">
+              <mat-hint *ngIf="control.properties?.hint">{{ control.properties.hint }}</mat-hint>
+            </mat-form-field>
+
+            <!-- Email input -->
+            <mat-form-field *ngSwitchCase="'email'" appearance="outline" class="full-width">
+              <mat-label>{{ control.label }}</mat-label>
+              <input matInput type="email" [formControlName]="'control_' + control.id"
+                     [placeholder]="control.properties?.placeholder || ''" 
+                     [required]="control.required">
+              <mat-hint *ngIf="control.properties?.hint">{{ control.properties.hint }}</mat-hint>
+            </mat-form-field>
+
+            <!-- Date input -->
+            <mat-form-field *ngSwitchCase="'date'" appearance="outline" class="full-width">
+              <mat-label>{{ control.label }}</mat-label>
+              <input matInput [matDatepicker]="picker" [formControlName]="'control_' + control.id"
+                     [required]="control.required">
+              <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+              <mat-datepicker #picker></mat-datepicker>
+              <mat-hint *ngIf="control.properties?.hint">{{ control.properties.hint }}</mat-hint>
+            </mat-form-field>
+
+            <!-- Select dropdown -->
+            <mat-form-field *ngSwitchCase="'select'" appearance="outline" class="full-width">
+              <mat-label>{{ control.label }}</mat-label>
+              <mat-select [formControlName]="'control_' + control.id" [required]="control.required">
+                <mat-option *ngFor="let option of control.properties?.options" [value]="option.value">
+                  {{ option.label }}
+                </mat-option>
+              </mat-select>
+              <mat-hint *ngIf="control.properties?.hint">{{ control.properties.hint }}</mat-hint>
+            </mat-form-field>
+
+            <!-- Radio buttons -->
+            <div *ngSwitchCase="'radio'" class="radio-group-field">
+              <label class="control-label">{{ control.label }} <span *ngIf="control.required" class="required-mark">*</span></label>
+              <mat-radio-group [formControlName]="'control_' + control.id" class="radio-group">
+                <mat-radio-button *ngFor="let option of control.properties?.options" [value]="option.value">
+                  {{ option.label }}
+                </mat-radio-button>
+              </mat-radio-group>
+              <mat-hint *ngIf="control.properties?.hint">{{ control.properties.hint }}</mat-hint>
+            </div>
+
+            <!-- Checkboxes -->
+            <div *ngSwitchCase="'checkbox'" class="checkbox-field">
+              <label class="control-label">{{ control.label }} <span *ngIf="control.required" class="required-mark">*</span></label>
+              <div class="checkbox-group">
+                <mat-checkbox [formControlName]="'control_' + control.id">
+                  {{ control.properties?.label || '' }}
+                </mat-checkbox>
+              </div>
+              <mat-hint *ngIf="control.properties?.hint">{{ control.properties.hint }}</mat-hint>
+            </div>
+
+            <!-- Default case -->
+            <mat-form-field *ngSwitchDefault appearance="outline" class="full-width">
+              <mat-label>{{ control.label }}</mat-label>
+              <input matInput [formControlName]="'control_' + control.id"
+                     [placeholder]="control.properties?.placeholder || ''" 
+                     [required]="control.required">
+              <mat-hint *ngIf="control.properties?.hint">{{ control.properties.hint }}</mat-hint>
+            </mat-form-field>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button mat-button type="button">Cancel</button>
+        <button mat-raised-button color="primary" type="submit" [disabled]="formGroup.invalid">Submit</button>
+      </div>
+    </form>
+  </div>
+</div>
