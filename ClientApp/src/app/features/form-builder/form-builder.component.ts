@@ -23,16 +23,16 @@ export class FormBuilderComponent implements OnInit {
   formGroup: FormGroup;
   loading = false;
   
-  availableControls: { type: ControlType, label: string, icon: string }[] = [
-    { type: 'Text', label: 'Text Field', icon: 'text_fields' },
-    { type: 'Textarea', label: 'Text Area', icon: 'notes' },
-    { type: 'RadioGroup', label: 'Radio Group', icon: 'radio_button_checked' },
-    { type: 'CheckboxGroup', label: 'Checkbox Group', icon: 'check_box' },
-    { type: 'Dropdown', label: 'Dropdown', icon: 'arrow_drop_down_circle' },
-    { type: 'FileUpload', label: 'File Upload', icon: 'cloud_upload' },
-    { type: 'Signature', label: 'Signature', icon: 'draw' },
-    { type: 'LocationPicker', label: 'Location Picker', icon: 'location_on' },
-    { type: 'Note', label: 'Note', icon: 'info' }
+  availableControls: { type: ControlType, label: string, icon: string, id?: string }[] = [
+    { type: 'Text', label: 'Text Field', icon: 'text_fields', id: 'text-control' },
+    { type: 'Textarea', label: 'Text Area', icon: 'notes', id: 'textarea-control' },
+    { type: 'RadioGroup', label: 'Radio Group', icon: 'radio_button_checked', id: 'radio-control' },
+    { type: 'CheckboxGroup', label: 'Checkbox Group', icon: 'check_box', id: 'checkbox-control' },
+    { type: 'Dropdown', label: 'Dropdown', icon: 'arrow_drop_down_circle', id: 'dropdown-control' },
+    { type: 'FileUpload', label: 'File Upload', icon: 'cloud_upload', id: 'file-control' },
+    { type: 'Signature', label: 'Signature', icon: 'draw', id: 'signature-control' },
+    { type: 'LocationPicker', label: 'Location Picker', icon: 'location_on', id: 'location-control' },
+    { type: 'Note', label: 'Note', icon: 'info', id: 'note-control' }
   ];
   
   isNewSection: boolean = false;
@@ -200,7 +200,17 @@ export class FormBuilderComponent implements OnInit {
     });
   }
 
-  dropControl(event: CdkDragDrop<Control[]>, sectionIndex: number): void {
+  getSectionIds(): string[] {
+    if (!this.form) return [];
+    return this.form.sections.map((_, index) => `section-${index}`);
+  }
+  
+  getSectionConnections(): string[] {
+    const sectionIds = this.getSectionIds();
+    return ['available-controls', ...sectionIds];
+  }
+  
+  dropControl(event: CdkDragDrop<any[]>, sectionIndex: number): void {
     if (!this.form) return;
     
     if (event.previousContainer === event.container) {
@@ -218,12 +228,35 @@ export class FormBuilderComponent implements OnInit {
           event.container.data.map(control => control.id)
         ).subscribe();
       }
-    } else {
-      // Adding a new control from the available controls panel
+    } else if (event.previousContainer.id === 'available-controls') {
+      // Dragging from available controls to a section
       const controlType = this.availableControls[event.previousIndex].type;
       
       // Open configuration dialog
       this.openControlConfig(null, controlType, sectionIndex, event.currentIndex);
+    } else {
+      // Moving control between different sections
+      const previousSectionIndex = parseInt(event.previousContainer.id.split('-')[1]);
+      const control = event.previousContainer.data[event.previousIndex] as Control;
+      
+      // Remove from previous section
+      this.form.sections[previousSectionIndex].controls.splice(event.previousIndex, 1);
+      
+      // Add to new section
+      control.sectionId = this.form.sections[sectionIndex].id;
+      this.form.sections[sectionIndex].controls.splice(event.currentIndex, 0, control);
+      
+      // Update orderIndex in both sections
+      this.form.sections[previousSectionIndex].controls.forEach((c, idx) => {
+        c.orderIndex = idx;
+      });
+      
+      this.form.sections[sectionIndex].controls.forEach((c, idx) => {
+        c.orderIndex = idx;
+      });
+      
+      // API update would go here in production
+      this.snackBar.open('Control moved to new section', 'Close', { duration: 2000 });
     }
   }
 

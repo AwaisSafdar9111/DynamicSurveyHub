@@ -73,7 +73,7 @@
                 cdkDropList
                 id="section-{{sectionIndex}}"
                 [cdkDropListData]="section.controls"
-                [cdkDropListConnectedTo]="['available-controls']"
+                [cdkDropListConnectedTo]="getSectionConnections()"
                 (cdkDropListDropped)="dropControl($event, sectionIndex)"
                 class="form-controls-container">
                 <div class="control-box" *ngFor="let control of section.controls; let controlIndex = index" cdkDrag>
