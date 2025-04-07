@@ -52,6 +52,7 @@ namespace SurveyApp.API.Controllers
         }
 
         [HttpPost]
+        [Route("CreateForm")]
         public async Task<ActionResult<FormDto>> CreateForm(FormDto formDto)
         {
             try

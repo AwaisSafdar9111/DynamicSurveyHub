@@ -25,7 +25,7 @@ builder.Services.AddSwaggerGen();
 
 // Add DbContext
 builder.Services.AddDbContext<SurveyAppDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseSqlServer("Server=localhost;Database=SurveyAppDb;TrustServerCertificate=True;Trusted_Connection=True;"));
 
 // Register repositories
 builder.Services.AddScoped<IFormRepository, FormRepository>();
@@ -51,12 +51,12 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
+app.UseSwagger(); // Generates the Swagger JSON endpoint
+app.UseSwaggerUI(c => // This configures the Swagger UI
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "SurveyApp API v1");
+    c.RoutePrefix = string.Empty;  // To access Swagger UI at root (/)
+});
 
 app.UseHttpsRedirection();
 
@@ -67,10 +67,10 @@ app.UseAuthorization();
 app.MapControllers();
 
 // Ensure database is created
-using (var scope = app.Services.CreateScope())
-{
-    var dataContext = scope.ServiceProvider.GetRequiredService<SurveyAppDbContext>();
-    dataContext.Database.EnsureCreated();
-}
+//using (var scope = app.Services.CreateScope())
+//{
+//    var dataContext = scope.ServiceProvider.GetRequiredService<SurveyAppDbContext>();
+//    dataContext.Database.EnsureCreated();
+//}
 
 app.Run();

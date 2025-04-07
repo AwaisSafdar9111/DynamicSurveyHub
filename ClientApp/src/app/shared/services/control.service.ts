@@ -7,7 +7,7 @@ import { Control, ControlOption, ControlCondition } from '../models/control.mode
   providedIn: 'root'
 })
 export class ControlService {
-  private apiUrl = 'http://localhost:8000/api';
+  private apiUrl = 'https://localhost:64708/api';
 
   constructor(private http: HttpClient) { }
 

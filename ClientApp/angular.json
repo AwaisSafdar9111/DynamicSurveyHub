@@ -67,20 +67,20 @@
         "serve": {
           "builder": "@angular-devkit/build-angular:dev-server",
           "options": {
-            "buildTarget": "survey-app:build",
+            "browserTarget": "survey-app:build",
             "port": 5000,
             "host": "0.0.0.0"
           },
           "configurations": {
             "production": {
-              "buildTarget": "survey-app:build:production"
+              "browserTarget": "survey-app:build:production"
             }
           }
         },
         "extract-i18n": {
           "builder": "@angular-devkit/build-angular:extract-i18n",
           "options": {
-            "buildTarget": "survey-app:build"
+            "browserTarget": "survey-app:build"
           }
         },
         "test": {

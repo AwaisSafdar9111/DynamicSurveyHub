@@ -8,7 +8,7 @@ import { FormSubmission } from '../models/control.model';
   providedIn: 'root'
 })
 export class FormService {
-  private apiUrl = 'http://localhost:8000/api';
+  private apiUrl = 'https://localhost:64708/api';
 
   constructor(private http: HttpClient) { }
 
@@ -21,7 +21,7 @@ export class FormService {
   }
 
   createForm(form: Form): Observable<Form> {
-    return this.http.post<Form>(`${this.apiUrl}/forms`, form);
+    return this.http.post<Form>(`${this.apiUrl}/forms/CreateForm`, form);
   }
 
   updateForm(form: Form): Observable<Form> {

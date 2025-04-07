@@ -1,13 +1,8 @@
--- SQL Server Database Script for Dynamic Survey Application
--- ================================================================
--- This script creates the database schema for Dynamic Survey Application
--- Compatible with SQL Server 2016 and later versions
--- ================================================================
 
 -- Create Database (uncomment if you want to create a new database)
--- CREATE DATABASE DynamicSurvey;
+-- CREATE DATABASE SurveyAppDb;
 -- GO
--- USE DynamicSurvey;
+-- USE SurveyAppDb;
 -- GO
 
 -- Users Table
@@ -136,8 +131,8 @@ CREATE TABLE conditional_logic (
     condition_json NVARCHAR(MAX) NOT NULL, -- JSON representation of the condition
     created_at DATETIME2 NOT NULL DEFAULT GETDATE(),
     updated_at DATETIME2 NOT NULL DEFAULT GETDATE(),
-    CONSTRAINT FK_ConditionalLogic_Forms FOREIGN KEY (form_id) REFERENCES forms(id) ON DELETE CASCADE,
-    CONSTRAINT FK_ConditionalLogic_Controls FOREIGN KEY (control_id) REFERENCES controls(id) ON DELETE CASCADE
+    CONSTRAINT FK_ConditionalLogic_Forms FOREIGN KEY (form_id) REFERENCES forms(id) ON DELETE NO ACTION,
+    CONSTRAINT FK_ConditionalLogic_Controls FOREIGN KEY (control_id) REFERENCES controls(id) ON DELETE NO ACTION
 );
 GO
 
@@ -165,34 +160,34 @@ GO
 
 -- Insert sample sections
 INSERT INTO sections (form_id, title, description, sort_order)
-VALUES (1, 'Customer Information', 'Basic information about the customer', 0);
+VALUES (2, 'Customer Information', 'Basic information about the customer', 0);
 
 INSERT INTO sections (form_id, title, description, sort_order)
-VALUES (1, 'Product Feedback', 'Feedback about our products', 1);
+VALUES (2, 'Product Feedback', 'Feedback about our products', 1);
 
 INSERT INTO sections (form_id, title, description, sort_order)
-VALUES (1, 'Service Feedback', 'Feedback about our services', 2);
+VALUES (2, 'Service Feedback', 'Feedback about our services', 2);
 GO
 
 -- Insert sample controls
 INSERT INTO controls (section_id, type, label, name, placeholder, is_required, sort_order)
-VALUES (1, 'text', 'Full Name', 'fullName', 'Enter your full name', 1, 0);
+VALUES (5, 'text', 'Full Name', 'fullName', 'Enter your full name', 1, 0);
 
 INSERT INTO controls (section_id, type, label, name, placeholder, is_required, sort_order)
-VALUES (1, 'email', 'Email Address', 'email', 'Enter your email address', 1, 1);
+VALUES (5, 'email', 'Email Address', 'email', 'Enter your email address', 1, 1);
 
 INSERT INTO controls (section_id, type, label, name, description, is_required, sort_order, options)
-VALUES (2, 'select', 'Product', 'product', 'Select the product you want to provide feedback for', 1, 0, 
+VALUES (6, 'select', 'Product', 'product', 'Select the product you want to provide feedback for', 1, 0, 
 '[{"value":"product1","label":"Product One"},{"value":"product2","label":"Product Two"},{"value":"product3","label":"Product Three"}]');
 
 INSERT INTO controls (section_id, type, label, name, is_required, sort_order)
-VALUES (2, 'rating', 'Product Satisfaction', 'productSatisfaction', 1, 1);
+VALUES (6, 'rating', 'Product Satisfaction', 'productSatisfaction', 1, 1);
 
 INSERT INTO controls (section_id, type, label, name, is_required, sort_order)
-VALUES (3, 'rating', 'Service Satisfaction', 'serviceSatisfaction', 1, 0);
+VALUES (7, 'rating', 'Service Satisfaction', 'serviceSatisfaction', 1, 0);
 
 INSERT INTO controls (section_id, type, label, name, placeholder, is_required, sort_order)
-VALUES (3, 'textarea', 'Additional Comments', 'comments', 'Please provide any additional feedback', 0, 1);
+VALUES (7, 'textarea', 'Additional Comments', 'comments', 'Please provide any additional feedback', 0, 1);
 GO
 
 -- Print completion message
